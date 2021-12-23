@@ -1,0 +1,15 @@
+{
+    "namespace": "ba.bundleimporter.datamodel",
+    "type": "record",
+    "name": "Bundle",
+    "fields":[
+         {
+             "name": "bundleId",
+             "type": "string"
+         },
+         {
+            "name": "pdfUrl",
+            "type": "string"
+         }
+    ]
+}
