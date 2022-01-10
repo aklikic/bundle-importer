@@ -16,14 +16,14 @@ import java.io.IOException;
 public class SerializationFlowImpl<C> implements SerializationFlow{
     public static Logger log = LoggerFactory.getLogger(SerializationFlowImpl.class);
     @Override
-    public Flow<Pair<byte[],C>, Pair<Either<Bundle, Error>,C>, NotUsed> flow() {
+    public Flow<Pair<byte[],C>, Pair<Either<Error,Bundle>,C>, NotUsed> flow() {
         return
                 Flow.<Pair<byte[],C>>create()
                         .map(message->{
                             try {
-                                return Pair.create(Left.<Bundle,Error>apply(Serializer.serializeBundle(message.first())),message.second());
+                                return Pair.create(Right.apply(Serializer.serializeBundle(message.first())),message.second());
                             }catch (IOException e){
-                                return Pair.create(Right.<Bundle,Error>apply(new Error.LogAndSkip(message.first(),e.getMessage())),message.second());
+                                return Pair.create(Left.apply(new Error.LogAndSkip(message.first(),e.getMessage())),message.second());
                             }
                         });
     }

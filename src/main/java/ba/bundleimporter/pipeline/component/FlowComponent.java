@@ -9,5 +9,5 @@ import scala.util.Either;
 
 public interface FlowComponent<I,O,C> {
 
-    Flow<Pair<I,C>, Pair<Either<O, Error>,C>, NotUsed> flow();
+    Flow<Pair<I,C>, Pair<Either<Error,O>,C>, NotUsed> flow();
 }

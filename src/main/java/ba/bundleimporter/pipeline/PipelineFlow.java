@@ -10,7 +10,10 @@ import ba.bundleimporter.pipeline.component.validation.ValidationFlow;
 
 public class PipelineFlow extends PipelineFlowSupport {
 
-    public static <C> Flow<Pair<byte[],C>, Pair<Done,C>, NotUsed> flow(SerializationFlow<C> serializationFlow, ValidationFlow<C> validationFlow, ErrorHandlerFlow<C> errorToTopic, ErrorHandlerFlow<C> errorToDb){
+    public static <C> Flow<Pair<byte[],C>, Pair<Done,C>, NotUsed> flow(SerializationFlow<C> serializationFlow,
+                                                                       ValidationFlow<C> validationFlow,
+                                                                       ErrorHandlerFlow<C> errorToTopic,
+                                                                       ErrorHandlerFlow<C> errorToDb){
         return
         Flow.<Pair<byte[],C>>create()
                 .via(serializationFlow.flow())

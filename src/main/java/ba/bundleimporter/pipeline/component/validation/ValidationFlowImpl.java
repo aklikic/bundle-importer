@@ -10,14 +10,14 @@ import scala.util.Left;
 import scala.util.Right;
 
 public class ValidationFlowImpl<C> implements ValidationFlow{
-    public Flow<Pair<Bundle,C>, Pair<Either<Bundle, Error>,C>, NotUsed> flow() {
+    public Flow<Pair<Bundle,C>, Pair<Either<Error,Bundle>,C>, NotUsed> flow() {
         return
                 Flow.<Pair<Bundle,C>>create()
                         .map(bundle->{
                             if(validateBundleId(bundle.first().getBundleId().toString()))
-                                return Pair.create(Left.apply(bundle.first()),bundle.second());
+                                return Pair.create(Right.apply(bundle.first()),bundle.second());
                             else
-                                return Pair.create(Right.apply(new Error.BusinessError(bundle.first(),"BundleId is not a number!")),bundle.second());
+                                return Pair.create(Left.apply(new Error.BusinessError(bundle.first(),"BundleId is not a number!")),bundle.second());
                         });
     }
 

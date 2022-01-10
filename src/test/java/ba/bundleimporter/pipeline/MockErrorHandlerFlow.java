@@ -17,15 +17,15 @@ public class MockErrorHandlerFlow<C> implements ErrorHandlerFlow {
         this.simulateError = simulateError;
     }
     @Override
-    public Flow<Pair<Error.BusinessError,C>, Pair<Either<Done, Error>,C>, NotUsed> flow() {
+    public Flow<Pair<Error.BusinessError,C>, Pair<Either<Error,Done>,C>, NotUsed> flow() {
         return
         Flow.<Pair<Error.BusinessError,C>>create()
             .map(error-> {
                 if(simulateError)
-                    return Pair.create(Right.apply(new Error.InterruptError(new RuntimeException("Simulated error"))),error.second());
+                    return Pair.create(Left.apply(new Error.InterruptError(new RuntimeException("Simulated error"))),error.second());
                 else {
                     //TODO simulate storing to DB or topic
-                    return Pair.create(Left.apply(Done.getInstance()), error.second());
+                    return Pair.create(Right.apply(Done.getInstance()), error.second());
                 }
             });
 

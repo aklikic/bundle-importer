@@ -12,40 +12,41 @@ import scala.util.Right;
 
 public class PipelineFlowSupport {
 
-    public static <I,O,C> Source<Pair<Either<O, Error>,C>, NotUsed> applyFlowConditional(Flow<Pair<I,C>,Pair<Either<O,Error>,C>,NotUsed> flow, Pair<Either<I,Error>,C> message){
-        if(message.first().isLeft()){
+    public static <I,O,C> Source<Pair<Either<Error,O>,C>, NotUsed> applyFlowConditional(Flow<Pair<I,C>,Pair<Either<Error,O>,C>,NotUsed> flow, Pair<Either<Error,I>,C> message){
+        if(message.first().isRight()){
             return
-                    Source.single(Pair.create(message.first().left().get(),message.second()))
+                    Source.single(Pair.create(message.first().right().get(),message.second()))
                             .via(flow);
         }else{
-            return Source.single(Pair.create(Right.apply(message.first().right().get()),message.second()));
+            return Source.single(Pair.create(Left.apply(message.first().left().get()),message.second()));
         }
     }
 
-    public static <I,C> Source<Pair<Either<I,Error>,C>,NotUsed> applyErrorFlow(Flow<Pair<Error.BusinessError,C>, Pair<Either<Done,Error>,C>, NotUsed> flow, Pair<Either<I,Error>,C> message){
-        if(message.first().isLeft()){
+    public static <I,C> Source<Pair<Either<Error,I>,C>,NotUsed> applyErrorFlow(Flow<Pair<Error.BusinessError,C>, Pair<Either<Error,Done>,C>, NotUsed> flow,
+                                                                               Pair<Either<Error,I>,C> message){
+        if(message.first().isRight()){
             return
-                    Source.single(Pair.create(Left.apply(message.first().left().get()),message.second()));
+                    Source.single(Pair.create(Right.apply(message.first().right().get()),message.second()));
         }else{
-            if(message.first().right().get() instanceof Error.BusinessError)
-                return Source.single(Pair.create((Error.BusinessError)message.first().right().get(),message.second()))
+            if(message.first().left().get() instanceof Error.BusinessError)
+                return Source.single(Pair.create((Error.BusinessError)message.first().left().get(),message.second()))
                         .via(flow)
                         .map(m->{
-                            if(m.first().isLeft())
-                                return Pair.create(Right.apply(message.first().right().get()),message.second());
+                            if(m.first().isRight())
+                                return Pair.create(Left.apply(message.first().left().get()),message.second());
                             else
-                                return Pair.create(Right.apply(m.first().right().get()),message.second());
+                                return Pair.create(Left.apply(m.first().left().get()),message.second());
                         });
             else
-                return Source.single(Pair.create(Right.apply(message.first().right().get()),message.second()));
+                return Source.single(Pair.create(Left.apply(message.first().left().get()),message.second()));
         }
     }
 
-    public static <I,C> Pair<Done,C> resultHandler(Pair<Either<I,Error>,C> res){
-        if(res.first().isLeft()){
+    public static <I,C> Pair<Done,C> resultHandler(Pair<Either<Error,I>,C> res){
+        if(res.first().isRight()){
             return Pair.create(Done.getInstance(),res.second());
         }else{
-            Error error = res.first().right().get();
+            Error error = res.first().left().get();
             if(error instanceof  Error.LogAndSkip)
                 return Pair.create(Done.getInstance(),res.second());
             else if(error instanceof Error.BusinessError)
