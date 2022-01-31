@@ -6,12 +6,14 @@ import akka.japi.Pair;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import ba.bundleimporter.pipeline.component.Error;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.util.Either;
 import scala.util.Left;
 import scala.util.Right;
 
 public class PipelineFlowSupport {
-
+    public static Logger logger = LoggerFactory.getLogger(PipelineFlowSupport.class);
     public static <I,O,C> Source<Pair<Either<Error,O>,C>, NotUsed> applyFlowConditional(Flow<Pair<I,C>,Pair<Either<Error,O>,C>,NotUsed> flow, Pair<Either<Error,I>,C> message){
         if(message.first().isRight()){
             return
@@ -43,6 +45,7 @@ public class PipelineFlowSupport {
     }
 
     public static <I,C> Pair<Done,C> resultHandler(Pair<Either<Error,I>,C> res){
+
         if(res.first().isRight()){
             return Pair.create(Done.getInstance(),res.second());
         }else{

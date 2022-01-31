@@ -1,6 +1,5 @@
 package ba.bundleimporter.pipeline.component.serialization;
 
-import akka.NotUsed;
 import akka.japi.Pair;
 import akka.stream.javadsl.Flow;
 import ba.bundleimporter.datamodel.Bundle;
@@ -14,16 +13,25 @@ import scala.util.Right;
 import java.io.IOException;
 
 public class SerializationFlowImpl<C> implements SerializationFlow{
-    public static Logger log = LoggerFactory.getLogger(SerializationFlowImpl.class);
+    public static Logger logger = LoggerFactory.getLogger(SerializationFlowImpl.class);
     @Override
-    public Flow<Pair<byte[],C>, Pair<Either<Error,Bundle>,C>, NotUsed> flow() {
+    public Flow<Pair<byte[],C>, Pair<Either<Error,Bundle>,C>, ?> flow() {
         return
                 Flow.<Pair<byte[],C>>create()
-                        .map(message->{
+                        .<Pair<Either<Error,Bundle>,C>>map(message->{
+                            Bundle bundle = null;
+                            String error = null;
                             try {
-                                return Pair.create(Right.apply(Serializer.serializeBundle(message.first())),message.second());
+                                bundle = Serializer.deSerializeBundle(message.first());
                             }catch (IOException e){
-                                return Pair.create(Left.apply(new Error.LogAndSkip(message.first(),e.getMessage())),message.second());
+                                error = e.getMessage();
+                            }
+                            if(bundle != null) {
+                                logger.info("DeSerialization [{}] OK",new String(message.first()));
+                                return Pair.create(Right.apply(bundle), message.second());
+                            }else {
+                                logger.error("DeSerialization [{}] ERROR",new String(message.first()));
+                                return Pair.create(Left.apply(new Error.LogAndSkip(message.first(), error)), message.second());
                             }
                         });
     }

@@ -8,17 +8,23 @@ import akka.stream.javadsl.Flow;
 import akka.stream.testkit.TestPublisher;
 import akka.stream.testkit.TestSubscriber;
 import ba.bundleimporter.datamodel.Bundle;
+import ba.bundleimporter.pipeline.component.publisher.PublisherFlowImpl;
 import ba.bundleimporter.pipeline.component.serialization.SerializationFlowImpl;
 import ba.bundleimporter.pipeline.component.validation.ValidationFlowImpl;
+import ba.bundleimporter.pipeline.kafka.KafkaTopicProducerMock;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class TestPipelineFlow {
     private ActorSystem system = ActorSystem.create("test");
 
+
     private Flow<Pair<byte[],NotUsed>, Pair<Done,NotUsed>, NotUsed> pipelineFlow(boolean simulateErrorHandlerError){
-        return PipelineFlow.flow(new SerializationFlowImpl<NotUsed>(),new ValidationFlowImpl<NotUsed>(),new MockErrorHandlerFlow<NotUsed>(simulateErrorHandlerError),new MockErrorHandlerFlow<NotUsed>(false));
+        return PipelineFlow.flow(
+                new SerializationFlowImpl<NotUsed>(),
+                new ValidationFlowImpl<NotUsed>(),
+                new PublisherFlowImpl<NotUsed>(new KafkaTopicProducerMock(system,"bundleOutKafkaTopicName")),
+                new MockErrorHandlerFlow<NotUsed>(simulateErrorHandlerError),
+                new MockErrorHandlerFlow<NotUsed>(false));
     }
 
     @Test

@@ -1,0 +1,11 @@
+{
+    "namespace": "ba.bundleimporter.datamodel",
+    "type": "record",
+    "name": "BundleOut",
+    "fields":[
+         {
+             "name": "bundleId",
+             "type": "string"
+         }
+    ]
+}

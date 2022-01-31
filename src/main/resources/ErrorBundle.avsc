@@ -1,0 +1,15 @@
+{
+    "namespace": "ba.bundleimporter.datamodel",
+    "type": "record",
+    "name": "ErrorBundle",
+    "fields":[
+         {
+             "name": "bundleId",
+             "type": "string"
+         },
+         {
+            "name": "Reason",
+            "type": "string"
+         }
+    ]
+}

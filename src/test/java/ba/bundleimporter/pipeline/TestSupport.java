@@ -9,8 +9,8 @@ import akka.stream.testkit.TestPublisher;
 import akka.stream.testkit.TestSubscriber;
 import akka.stream.testkit.javadsl.TestSink;
 import akka.stream.testkit.javadsl.TestSource;
-import ba.bundleimporter.pipeline.component.serialization.Serializer;
 import ba.bundleimporter.datamodel.Bundle;
+import ba.bundleimporter.pipeline.component.serialization.Serializer;
 
 import java.io.IOException;
 
@@ -25,7 +25,7 @@ public class TestSupport {
     }
     public static byte[] getBundleRawMessage(Bundle bundle){
         try {
-            return Serializer.deSerializeBundle(bundle);
+            return Serializer.serializeBundle(bundle);
         } catch (IOException e) {
             return null;
         }

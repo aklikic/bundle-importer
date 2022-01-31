@@ -1,21 +1,21 @@
 package ba.bundleimporter.pipeline;
-import static org.junit.Assert.assertTrue;
 
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.japi.Pair;
 import akka.stream.testkit.TestPublisher;
 import akka.stream.testkit.TestSubscriber;
-import ba.bundleimporter.pipeline.component.Error;
 import ba.bundleimporter.datamodel.Bundle;
+import ba.bundleimporter.pipeline.component.Error;
 import ba.bundleimporter.pipeline.component.serialization.SerializationFlow;
 import ba.bundleimporter.pipeline.component.serialization.SerializationFlowImpl;
 import ba.bundleimporter.pipeline.component.validation.ValidationFlow;
 import ba.bundleimporter.pipeline.component.validation.ValidationFlowImpl;
 import org.junit.Test;
 import scala.util.Either;
-import scala.util.Left;
 import scala.util.Right;
+
+import static org.junit.Assert.assertTrue;
 
 public class TestFlowComponent {
 

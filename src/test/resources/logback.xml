@@ -3,10 +3,13 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[%date{ISO8601}] [%level] [%logger{0}] - %msg%n</pattern>
+            <pattern>[%date{ISO8601}] [%level] [%logger{2}] - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <logger name="org.testcontainers" level="ERROR" />
+    <logger name="org.apache.kafka" level="ERROR" />
+    <logger name="akka.kafka" level="ERROR" />
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
