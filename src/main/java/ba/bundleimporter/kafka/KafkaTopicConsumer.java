@@ -50,25 +50,9 @@ public class KafkaTopicConsumer {
         return runSourceWithBackoff(source,businessFlow);
     }
 
-    public CompletionStage<Done> runConsumerPerPartition(Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow, String topicName, int maxPartitions){
-        //logger.info("Consuming from: {}",topicName);
+    public CompletionStage<Done> runConsumer(Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow, String topicName){
+
         AutoSubscription subscription = Subscriptions.topics(topicName);
-      /* Pair<Consumer.Control,CompletionStage<Done>> p =
-        Consumer.committablePartitionedSource(consumerSettings, subscription)
-               .mapMaterializedValue(c -> {
-                    control.set(c);
-                    return NotUsed.getInstance();
-                })
-                .mapAsyncUnordered(
-                        maxPartitions,
-                        pair-> runSourceWithBackoff(pair.second(),businessFlow)
-                ).toMat(Sink.ignore(),Keep.both())
-                .run(materializer);
-        control.set(p.first());
-        runStream=p.second();
-        return runStream;*/
-
-
         Source<ConsumerMessage.CommittableMessage<String,byte[]>, NotUsed> source =
                 Consumer.committableSource(consumerSettings,subscription)
                         .mapMaterializedValue(c -> {
@@ -78,6 +62,21 @@ public class KafkaTopicConsumer {
         runStream = runSourceWithBackoff(source,businessFlow);
         return runStream;
 
+    }
+
+    public CompletionStage<Done> runConsumerPerPartition(Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow, String topicName, int maxPartitions){
+
+        AutoSubscription subscription = Subscriptions.topics(topicName);
+        Pair<Consumer.Control,CompletionStage<Done>> p =
+        Consumer.committablePartitionedSource(consumerSettings, subscription)
+                .mapAsyncUnordered(
+                        maxPartitions,
+                        pair-> runSourceWithBackoff(pair.second(),businessFlow)
+                ).toMat(Sink.ignore(),Keep.both())
+                .run(materializer);
+        control.set(p.first());
+        runStream=p.second();
+        return runStream;
     }
 
     public CompletionStage<Done> stop(){

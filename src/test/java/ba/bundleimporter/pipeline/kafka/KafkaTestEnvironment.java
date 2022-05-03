@@ -106,9 +106,15 @@ public class KafkaTestEnvironment {
     }
 
     public void start(boolean simulateInterruptError){
+        start(simulateInterruptError,true);
+    }
+    public void start(boolean simulateInterruptError, boolean consumerPerPartition){
         bundleOutTestConsumer.start();
         bundleErrorTestConsumer.start();
-        consumer.runConsumerPerPartition(pipelineFlow(simulateInterruptError,bundleOutProducer,bundleErrorProducer),bundleInTopicName,maxKafkaPartition);
+        if(consumerPerPartition)
+            consumer.runConsumerPerPartition(pipelineFlow(simulateInterruptError,bundleOutProducer,bundleErrorProducer),bundleInTopicName,maxKafkaPartition);
+        else
+            consumer.runConsumer(pipelineFlow(simulateInterruptError,bundleOutProducer,bundleErrorProducer),bundleInTopicName);
     }
 
     public CompletionStage<Done> stop(){

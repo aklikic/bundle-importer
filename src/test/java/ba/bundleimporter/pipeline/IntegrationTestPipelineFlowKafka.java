@@ -105,17 +105,22 @@ public class IntegrationTestPipelineFlowKafka {
     }
     @Test
     public void pipelineValidationError()throws Exception{
-        pipelineValidationErrorInternal(false);
+        pipelineValidationErrorInternal(false, true);
     }
 
     @Test
     public void pipelineValidationErrorWithInterruptOnErrorToTopic()throws Exception{
-        pipelineValidationErrorInternal(true);
+        pipelineValidationErrorInternal(true,true);
     }
 
-    private void pipelineValidationErrorInternal(boolean simulateInterruptError)throws Exception{
+    @Test
+    public void pipelineValidationErrorWithInterruptOnErrorToTopicConsumerSource()throws Exception{
+        pipelineValidationErrorInternal(true,false);
+    }
+
+    private void pipelineValidationErrorInternal(boolean simulateInterruptError, boolean consumerPerPartition )throws Exception{
         KafkaTestEnvironment test = environmentFactory.create();
-        test.start(simulateInterruptError);
+        test.start(simulateInterruptError,consumerPerPartition);
 
         String bundleId = "1";
 
@@ -129,7 +134,7 @@ public class IntegrationTestPipelineFlowKafka {
         test.bundleInTestProducer.publish(TestSupport.getBundle(bundleId));
         test.bundleOutTestConsumer.assertNoMessage();
 
-        Thread.sleep(35000);
+        //Thread.sleep(35000);
 
         ErrorBundle errorBundle = test.bundleErrorTestConsumer.getNext();
         assertTrue(errorBundle!=null);
