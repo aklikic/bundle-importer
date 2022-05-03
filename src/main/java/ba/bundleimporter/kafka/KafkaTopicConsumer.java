@@ -15,7 +15,12 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
 @Getter
 public class KafkaTopicConsumer {
     private static final Logger logger = LoggerFactory.getLogger(KafkaTopicConsumer.class);
@@ -24,7 +29,9 @@ public class KafkaTopicConsumer {
     private final RestartSettings restartSettings;
     private final ConsumerSettings<String,byte[]> consumerSettings;
     private final CommitterSettings committerSettings;
-    private Pair<Consumer.Control,CompletionStage<Done>> runStream;
+    //private Pair<Consumer.Control,CompletionStage<Done>> runStream;
+    private CompletionStage<Done> runStream;
+    private final AtomicReference<Consumer.Control> control = new AtomicReference<>(Consumer.createNoopControl());
 
     public KafkaTopicConsumer(ActorSystem system,
                               Materializer materializer,
@@ -36,6 +43,7 @@ public class KafkaTopicConsumer {
         this.restartSettings = restartSettings;
         this.consumerSettings = consumerSettings;
         this.committerSettings = committerSettings;
+
     }
 
     public CompletionStage<Done> runFromSource(Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow,Source<ConsumerMessage.CommittableMessage<String, byte[]>,NotUsed> source){
@@ -45,24 +53,45 @@ public class KafkaTopicConsumer {
     public CompletionStage<Done> runConsumerPerPartition(Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow, String topicName, int maxPartitions){
         //logger.info("Consuming from: {}",topicName);
         AutoSubscription subscription = Subscriptions.topics(topicName);
-        runStream =
+      /* Pair<Consumer.Control,CompletionStage<Done>> p =
         Consumer.committablePartitionedSource(consumerSettings, subscription)
+               .mapMaterializedValue(c -> {
+                    control.set(c);
+                    return NotUsed.getInstance();
+                })
                 .mapAsyncUnordered(
                         maxPartitions,
                         pair-> runSourceWithBackoff(pair.second(),businessFlow)
                 ).toMat(Sink.ignore(),Keep.both())
                 .run(materializer);
+        control.set(p.first());
+        runStream=p.second();
+        return runStream;*/
 
-        return runStream.second();
+
+        Source<ConsumerMessage.CommittableMessage<String,byte[]>, NotUsed> source =
+                Consumer.committableSource(consumerSettings,subscription)
+                        .mapMaterializedValue(c -> {
+                            control.set(c);
+                            return NotUsed.getInstance();
+                        });
+        runStream = runSourceWithBackoff(source,businessFlow);
+        return runStream;
 
     }
 
     public CompletionStage<Done> stop(){
-        runStream.first().drainAndShutdown(runStream.second(),materializer.executionContext());
-        return runStream.second();
+        /*runStream.first().drainAndShutdown(runStream.second(),materializer.executionContext());
+        return runStream.second();*/
+        if(runStream!=null){
+            control.get().drainAndShutdown(runStream, materializer.executionContext());
+            return runStream;
+        }
+        return CompletableFuture.completedFuture(Done.getInstance());
+
     }
 
-    private CompletionStage<Done> runSourceWithBackoff(Source<ConsumerMessage.CommittableMessage<String,byte[]>, ?> source, Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow){
+    private CompletionStage<Done> runSourceWithBackoff(Source<ConsumerMessage.CommittableMessage<String,byte[]>, NotUsed> source, Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow){
         return
         handleSourceWithBackoff(source,businessFlow)
                 .toMat(Committer.sink(committerSettings.withMaxBatch(1)), Keep.both())
@@ -70,14 +99,14 @@ public class KafkaTopicConsumer {
                 .run(materializer);
     }
 
-    private Source<ConsumerMessage.CommittableOffset, ?> handleSourceWithBackoff( Source<ConsumerMessage.CommittableMessage<String,byte[]>, ?> source, Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow){
+    private Source<ConsumerMessage.CommittableOffset, NotUsed> handleSourceWithBackoff(Source<ConsumerMessage.CommittableMessage<String,byte[]>, NotUsed> source, Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow){
 
         return RestartSource.onFailuresWithBackoff(restartSettings,() -> handleSource(source,businessFlow));
     }
 
-    private Source<ConsumerMessage.CommittableOffset, ?> handleSource(Source<ConsumerMessage.CommittableMessage<String,byte[]>, ?> source,
-                                                                            Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, ?> businessFlow) {
-        //logger.info("handleSourceWithBackoff");
+    private Source<ConsumerMessage.CommittableOffset, NotUsed> handleSource(Source<ConsumerMessage.CommittableMessage<String,byte[]>, NotUsed> source,
+                                                                            Flow<Pair<byte[],ConsumerMessage.CommittableOffset>, Pair<Done,ConsumerMessage.CommittableOffset>, NotUsed> businessFlow) {
+        logger.info("handleSourceWithBackoff");
         return source
                 .buffer(1, OverflowStrategy.backpressure())
                 .map(m -> Pair.create(m.record().value(),m.committableOffset()))

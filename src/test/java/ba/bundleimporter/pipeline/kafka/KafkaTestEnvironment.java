@@ -81,7 +81,7 @@ public class KafkaTestEnvironment {
                 .withBootstrapServers(bootstrapServers);
         this.bundleInTopicName = bundleInTopicName;
 
-        RestartSettings restartSettings=RestartSettings.create(Duration.ofSeconds(1),Duration.ofSeconds(2),0.4);
+        RestartSettings restartSettings=RestartSettings.create(Duration.ofSeconds(1),Duration.ofSeconds(10),0.4);
         CommitterSettings committerSettings=CommitterSettings.create(system);
 
         bundleOutTestConsumer = new KafkaConsumerTestkit(system,materializer,testConsumerSettings, bundleOutTopicName, bundleOutDeSerialize);

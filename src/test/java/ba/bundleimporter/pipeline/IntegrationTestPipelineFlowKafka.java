@@ -33,7 +33,7 @@ public class IntegrationTestPipelineFlowKafka {
                 //.withInternalTopicsReplicationFactor(2)
                 ;
         String bootstrapServers = TestcontainersKafka.Singleton().startCluster(testContainerSettings);
-
+        System.out.println("bootstrapServers:"+bootstrapServers);
         //DIRECT KAFKA TEST CONTAINERS
         //KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka").withTag("5.4.1")); // contains Kafka 2.4.x
         //kafka.start();
@@ -128,6 +128,8 @@ public class IntegrationTestPipelineFlowKafka {
         bundleId = "two";
         test.bundleInTestProducer.publish(TestSupport.getBundle(bundleId));
         test.bundleOutTestConsumer.assertNoMessage();
+
+        Thread.sleep(35000);
 
         ErrorBundle errorBundle = test.bundleErrorTestConsumer.getNext();
         assertTrue(errorBundle!=null);
